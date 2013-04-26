@@ -17,8 +17,8 @@ void ini_close(struct INI *ini);
  *
  * Returns:
  * 	-1 if an error occured,
- * 	EOF if no more section can be found,
- * 	0 otherwise.
+ * 	0 if no more section can be found,
+ * 	1 otherwise.
  */
 int ini_open_section(struct INI *ini, const char **name);
 
@@ -29,8 +29,8 @@ int ini_open_section(struct INI *ini, const char **name);
  *
  * Returns:
  *  -1 if an error occured,
- *  EOF if no more key/value pairs can be found,
- *  0 otherwise.
+ *  0 if no more key/value pairs can be found,
+ *  1 otherwise.
  */
 int ini_read_key_value(struct INI *ini, const char **key, const char **value);
 

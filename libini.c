@@ -112,7 +112,7 @@ int ini_open_section(struct INI *ini, const char **name)
 {
 	const char *_name;
 	if (ini->curr == ini->end)
-		return EOF; /* EOF: no more sections */
+		return 0; /* EOF: no more sections */
 
 	if (ini->curr == ini->buf) {
 		if (skip_comments(ini) || *ini->curr != '[') {
@@ -122,7 +122,7 @@ int ini_open_section(struct INI *ini, const char **name)
 	} else while (*ini->curr != '[' && !skip_line(ini));
 
 	if (ini->curr == ini->end)
-		return EOF; /* EOF: no more sections */
+		return 0; /* EOF: no more sections */
 
 	_name = ++ini->curr;
 	do {
@@ -136,7 +136,7 @@ int ini_open_section(struct INI *ini, const char **name)
 	*ini->curr++ = '\0';
 	if (name)
 		*name = _name;
-	return 0;
+	return 1;
 }
 
 int ini_read_key_value(struct INI *ini, const char **key, const char **value)
@@ -145,11 +145,11 @@ int ini_read_key_value(struct INI *ini, const char **key, const char **value)
 	char *curr, *end = ini->end;
 
 	if (skip_comments(ini))
-		return EOF;
+		return 0;
 	curr = _key = ini->curr;
 
 	if (*curr == '[')
-		return EOF;
+		return 0;
 
 	while (true) {
 		curr++;
@@ -185,5 +185,5 @@ int ini_read_key_value(struct INI *ini, const char **key, const char **value)
 	ini->curr = curr;
 	*key = _key;
 	*value = _value;
-	return 0;
+	return 1;
 }
