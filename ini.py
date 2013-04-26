@@ -75,25 +75,35 @@ class INI(object):
 			return (key.value[:key_len.value], val.value[:val_len.value])
 		return (None, None)
 
+
+def read_ini(filename):
+	ini = INI(filename)
+	ini_dict = {}
+
+	while True:
+		section = ini.next_section()
+		if not section:
+			break
+
+		section_dict = {}
+		while True:
+			key, value = ini.read_pair()
+			if not key:
+				break
+			section_dict[key] = value
+
+		ini_dict[section] = section_dict
+
+	return ini_dict
+
+
 def main():
 	if len(argv) != 2:
 		print "Usage: ini.py [INI_FILE]..."
 		return
-	ini = INI(argv[1])
 
-	while True:
-		name = ini.next_section()
-		if not name:
-			print 'End.'
-			break
-
-		print 'In section: ' + name
-		while True:
-			key, value = ini.read_pair()
-			if not key:
-				print 'End of section.'
-				break
-			print 'Reading key: ' + key + ' value: ' + value
+	ini = read_ini(argv[1])
+	print ini
 
 if __name__ == '__main__':
 	main()
