@@ -108,7 +108,7 @@ static bool skip_line(struct INI *ini)
 	}
 }
 
-int ini_open_section(struct INI *ini, const char **name)
+int ini_next_section(struct INI *ini, const char **name)
 {
 	const char *_name;
 	if (ini->curr == ini->end)
@@ -139,7 +139,7 @@ int ini_open_section(struct INI *ini, const char **name)
 	return 1;
 }
 
-int ini_read_key_value(struct INI *ini, const char **key, const char **value)
+int ini_read_pair(struct INI *ini, const char **key, const char **value)
 {
 	char *_key, *_value;
 	char *curr, *end = ini->end;

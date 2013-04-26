@@ -20,7 +20,7 @@ void ini_close(struct INI *ini);
  * 	0 if no more section can be found,
  * 	1 otherwise.
  */
-int ini_open_section(struct INI *ini, const char **name);
+int ini_next_section(struct INI *ini, const char **name);
 
 /* Read a key/value pair.
  * 'key' and 'value' must be valid pointers. The pointers passed as arguments
@@ -32,6 +32,6 @@ int ini_open_section(struct INI *ini, const char **name);
  *  0 if no more key/value pairs can be found,
  *  1 otherwise.
  */
-int ini_read_key_value(struct INI *ini, const char **key, const char **value);
+int ini_read_pair(struct INI *ini, const char **key, const char **value);
 
 #endif
