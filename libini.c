@@ -5,11 +5,12 @@
 #include "ini.h"
 
 struct INI {
-	char *buf, *end, *curr;
+	const char *buf, *end, *curr;
 	bool free_buf_on_exit;
 };
 
-static struct INI *_ini_open_mem(char *buf, size_t len, bool free_buf_on_exit)
+static struct INI *_ini_open_mem(const char *buf,
+			size_t len, bool free_buf_on_exit)
 {
 	struct INI *ini = malloc(sizeof(*ini));
 	if (!ini) {
@@ -23,7 +24,7 @@ static struct INI *_ini_open_mem(char *buf, size_t len, bool free_buf_on_exit)
 	return ini;
 }
 
-struct INI *ini_open_mem(char *buf, size_t len)
+struct INI *ini_open_mem(const char *buf, size_t len)
 {
 	return _ini_open_mem(buf, len, false);
 }
@@ -71,14 +72,14 @@ error_fclose:
 void ini_close(struct INI *ini)
 {
 	if (ini->free_buf_on_exit)
-		free(ini->buf);
+		free((char *) ini->buf);
 	free(ini);
 }
 
 static bool skip_comments(struct INI *ini)
 {
-	char *curr = ini->curr;
-	char *end = ini->end;
+	const char *curr = ini->curr;
+	const char *end = ini->end;
 
 	while (curr != end) {
 		if (*curr == '\n')
@@ -95,8 +96,8 @@ static bool skip_comments(struct INI *ini)
 
 static bool skip_line(struct INI *ini)
 {
-	char *curr = ini->curr;
-	char *end = ini->end;
+	const char *curr = ini->curr;
+	const char *end = ini->end;
 
 	for (; curr != end && *curr != '\n'; curr++);
 	if (curr == end) {
@@ -108,7 +109,7 @@ static bool skip_line(struct INI *ini)
 	}
 }
 
-int ini_next_section(struct INI *ini, const char **name)
+int ini_next_section(struct INI *ini, const char **name, size_t *name_len)
 {
 	const char *_name;
 	if (ini->curr == ini->end)
@@ -133,16 +134,22 @@ int ini_next_section(struct INI *ini, const char **name)
 		}
 	} while (*ini->curr != ']');
 
-	*ini->curr++ = '\0';
-	if (name)
+
+	if (name && name_len) {
 		*name = _name;
+		*name_len = ini->curr - _name;
+	}
+
+	ini->curr++;
 	return 1;
 }
 
-int ini_read_pair(struct INI *ini, const char **key, const char **value)
+int ini_read_pair(struct INI *ini,
+			const char **key, size_t *key_len,
+			const char **value, size_t *value_len)
 {
-	char *_key, *_value;
-	char *curr, *end = ini->end;
+	size_t _key_len = 0;
+	const char *_key, *_value, *curr, *end = ini->end;
 
 	if (skip_comments(ini))
 		return 0;
@@ -159,11 +166,13 @@ int ini_read_pair(struct INI *ini, const char **key, const char **value)
 			return -1;
 
 		} else if (*curr == '=') {
-			*curr++ = '\0';
+			if (!_key_len)
+				_key_len = curr - _key;
+			curr++;
 			break;
 
-		} else if (*curr <= ' ')
-			*curr = '\0';
+		} else if (*curr <= ' ' && !_key_len)
+			_key_len = curr - _key;
 	}
 
 	/* Skip whitespaces. */
@@ -181,9 +190,11 @@ int ini_read_pair(struct INI *ini, const char **key, const char **value)
 		return -1;
 	}
 
-	*curr++ = '\0';
-	ini->curr = curr;
-	*key = _key;
 	*value = _value;
+	*value_len = curr - _value;
+	*key = _key;
+	*key_len = _key_len;
+
+	ini->curr = ++curr;
 	return 1;
 }
