@@ -34,14 +34,14 @@ def _init():
 
 	ini_next_section = lib.ini_next_section
 	ini_next_section.restype = c_int
-	ini_next_section.archtypes = (IniPtr, c_char_p)
+	ini_next_section.archtypes = (IniPtr, c_char_p, c_uint)
 	ini_next_section.errcheck = _checkRead
 	global _ini_next_section
 	_ini_next_section = ini_next_section
 
 	ini_read_pair = lib.ini_read_pair
 	ini_read_pair.restype = c_int
-	ini_read_pair.archtypes = (IniPtr, c_char_p, c_char_p)
+	ini_read_pair.archtypes = (IniPtr, c_char_p, c_uint, c_char_p, c_uint)
 	ini_read_pair.errcheck = _checkRead
 	global _ini_read_pair
 	_ini_read_pair = ini_read_pair
@@ -58,17 +58,22 @@ class INI(object):
 
 	def next_section(self):
 		s = c_char_p()
-		res = _ini_next_section(self._ini, byref(s))
+		u = c_uint()
+		res = _ini_next_section(self._ini, byref(s), byref(u))
 		if res == 1:
-			return s.value
+			return s.value[:u.value]
 
 	def read_pair(self):
 		key = c_char_p()
+		key_len = c_uint()
 		val = c_char_p()
-		res = _ini_read_pair(self._ini, byref(key), byref(val))
+		val_len = c_uint()
+		res = _ini_read_pair(self._ini, \
+				byref(key), byref(key_len), \
+				byref(val), byref(val_len))
 		if res == 1:
-			return (key.value, val.value)
-		return ((),())
+			return (key.value[:key_len.value], val.value[:val_len.value])
+		return (None, None)
 
 def main():
 	if len(argv) != 2:
