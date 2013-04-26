@@ -33,7 +33,7 @@ struct INI *ini_open(const char *file)
 {
 	FILE *f;
 	char *buf;
-	size_t len, pos = 0;
+	size_t len;
 	struct INI *ini = NULL;
 	
 	f = fopen(file, "r");
@@ -58,9 +58,10 @@ struct INI *ini_open(const char *file)
 
 	rewind(f);
 
-	do {
-		pos += fread(buf + pos, 1, len - pos, f);
-	} while (pos < len);
+	if (fread(buf, 1, len, f) < len) {
+		perror("Unable to read file");
+		goto error_fclose;
+	}
 
 	ini = _ini_open_mem(buf, len, true);
 
