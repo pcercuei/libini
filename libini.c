@@ -1,4 +1,4 @@
-
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -119,7 +119,7 @@ int ini_next_section(struct INI *ini, const char **name, size_t *name_len)
 	if (ini->curr == ini->buf) {
 		if (skip_comments(ini) || *ini->curr != '[') {
 			fprintf(stderr, "Malformed INI file (missing section header)\n");
-			return -1;
+			return -EIO;
 		}
 	} else while (*ini->curr != '[' && !skip_line(ini));
 
@@ -131,7 +131,7 @@ int ini_next_section(struct INI *ini, const char **name, size_t *name_len)
 		ini->curr++;
 		if (ini->curr == ini->end || *ini->curr == '\n') {
 			fprintf(stderr, "Malformed INI file (malformed section header)\n");
-			return -1;
+			return -EIO;
 		}
 	} while (*ini->curr != ']');
 
@@ -164,7 +164,7 @@ int ini_read_pair(struct INI *ini,
 
 		if (curr == end || *curr == '\n') {
 			fprintf(stderr, "ERROR: Unexpected end of line\n");
-			return -1;
+			return -EIO;
 
 		} else if (*curr == '=') {
 			if (!_key_len)
@@ -180,7 +180,7 @@ int ini_read_pair(struct INI *ini,
 	while (curr != end && (*curr == ' ' || *curr == '\t')) curr++;
 	if (curr == end) {
 		fprintf(stderr, "ERROR: Unexpected end of line\n");
-		return -1;
+		return -EIO;
 	}
 
 	_value = curr++;
@@ -188,7 +188,7 @@ int ini_read_pair(struct INI *ini,
 	while (curr != end && *curr != '\n') curr++;
 	if (curr == end) {
 		fprintf(stderr, "ERROR: Unexpected end of line\n");
-		return -1;
+		return -EIO;
 	}
 
 	*value = _value;
