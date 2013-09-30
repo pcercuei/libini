@@ -14,6 +14,9 @@ set(LIBINI_PC ${CMAKE_CURRENT_BINARY_DIR}/libini.pc)
 configure_file(libini.pc.cmakein ${LIBINI_PC} @ONLY)
 install(FILES ${LIBINI_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 
+set(SETUP_PY ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.py)
+configure_file(python/setup.py.cmakein ${SETUP_PY} @ONLY)
+
 set(LIBINI_CFILES libini.c)
 set(LIBINI_HEADERS ini.h)
 
