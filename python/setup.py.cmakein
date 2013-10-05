@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='libini',
-      version='0.1',
+      version='@VERSION@',
       description='Library to handle INI configuration files',
       author='Paul Cercueil',
       author_email='paul@crapouillou.net',
