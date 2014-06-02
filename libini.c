@@ -16,6 +16,7 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include "ini.h"
@@ -214,4 +215,14 @@ int ini_read_pair(struct INI *ini,
 
 	ini->curr = ++curr;
 	return 1;
+}
+
+void ini_set_read_pointer(struct INI *ini, const char *pointer)
+{
+	if ((uintptr_t) pointer < (uintptr_t) ini->buf)
+		ini->curr = ini->buf;
+	else if ((uintptr_t) pointer > (uintptr_t) ini->end)
+		ini->curr = ini->end;
+	else
+		ini->curr = pointer;
 }

@@ -54,4 +54,7 @@ int ini_read_pair(struct INI *ini,
 			const char **key, size_t *key_len,
 			const char **value, size_t *value_len);
 
+/* Set the read head to a specified offset. */
+void ini_set_read_pointer(struct INI *ini, const char *pointer);
+
 #endif /* __INI_H */
