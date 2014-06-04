@@ -200,7 +200,7 @@ int ini_read_pair(struct INI *ini,
 		return -EIO;
 	}
 
-	_value = curr++;
+	_value = curr;
 
 	while (curr != end && *curr != '\n') curr++;
 	if (curr == end) {
