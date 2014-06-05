@@ -184,13 +184,14 @@ int ini_read_pair(struct INI *ini,
 			return -EIO;
 
 		} else if (*curr == '=') {
-			if (!_key_len)
-				_key_len = curr - _key;
+			const char *tmp = curr;
+			_key_len = curr - _key;
+			for (tmp = curr - 1; tmp > ini->curr &&
+					(*tmp == ' ' || *tmp == '\t'); tmp--)
+				_key_len--;
 			curr++;
 			break;
-
-		} else if (*curr <= ' ' && !_key_len)
-			_key_len = curr - _key;
+		}
 	}
 
 	/* Skip whitespaces. */
