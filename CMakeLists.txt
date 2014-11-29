@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 2.8.8)
 project(libini C)
 
-set(VERSION "0.1")
+set(LIBINI_VERSION_MAJOR 0)
+set(LIBINI_VERSION_MINOR 1)
+set(VERSION "${LIBINI_VERSION_MAJOR}.${LIBINI_VERSION_MINOR}")
 
 set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib"
 	CACHE PATH "Installation directory for libraries")
@@ -21,16 +23,14 @@ set(LIBINI_CFILES libini.c)
 set(LIBINI_HEADERS ini.h)
 
 add_library(ini SHARED ${LIBINI_CFILES} ${LIBINI_HEADERS})
-add_library(inistatic STATIC ${LIBINI_CFILES} ${LIBINI_HEADERS})
-set_target_properties(ini inistatic PROPERTIES OUTPUT_NAME ini)
-set_target_properties(ini PROPERTIES VERSION ${VERSION})
+set_target_properties(ini PROPERTIES VERSION ${VERSION} SOVERSION ${LIBINI_VERSION_MAJOR})
 
 if (NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL)
 	install(FILES ${LIBINI_HEADERS} DESTINATION "${INSTALL_INC_DIR}")
 endif()
 
 if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL)
-	install(TARGETS ini inistatic
+	install(TARGETS ini
 		ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
 		LIBRARY DESTINATION "${INSTALL_LIB_DIR}")
 endif()
