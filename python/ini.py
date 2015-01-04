@@ -79,11 +79,13 @@ class INI(object):
 def read_ini(filename):
 	ini = INI(filename)
 	ini_dict = {}
+	first_section = True
 
 	while True:
 		section = ini.next_section()
-		if not section:
+		if not first_section and not section:
 			break
+		first_section = False
 
 		section_dict = {}
 		while True:
