@@ -22,6 +22,12 @@ configure_file(python/setup.py.cmakein ${SETUP_PY} @ONLY)
 set(LIBINI_CFILES libini.c)
 set(LIBINI_HEADERS ini.h)
 
+if (CMAKE_COMPILER_IS_GNUCC AND NOT WIN32)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+endif()
+
+add_definitions(-DLIBINI_EXPORTS=1)
+
 add_library(ini SHARED ${LIBINI_CFILES} ${LIBINI_HEADERS})
 set_target_properties(ini PROPERTIES VERSION ${VERSION} SOVERSION ${LIBINI_VERSION_MAJOR})
 

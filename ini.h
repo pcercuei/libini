@@ -21,14 +21,26 @@
 extern "C" {
 #endif
 
+#ifdef _WIN32
+#   ifdef LIBINI_EXPORTS
+#	define __api __declspec(dllexport)
+#   else
+#	define __api __declspec(dllimport)
+#   endif
+#elif __GNUC__ >= 4
+#   define __api __attribute__((visibility ("default")))
+#else
+#   define __api
+#endif
+
 #include <stdlib.h>
 
 struct INI;
 
-struct INI *ini_open(const char *file);
-struct INI *ini_open_mem(const char *buf, size_t len);
+__api struct INI *ini_open(const char *file);
+__api struct INI *ini_open_mem(const char *buf, size_t len);
 
-void ini_close(struct INI *ini);
+__api void ini_close(struct INI *ini);
 
 /* Jump to the next section.
  * if 'name' is set, the pointer passed as argument
@@ -41,7 +53,8 @@ void ini_close(struct INI *ini);
  * 	0 if no more section can be found,
  * 	1 otherwise.
  */
-int ini_next_section(struct INI *ini, const char **name, size_t *name_len);
+__api int ini_next_section(struct INI *ini,
+		const char **name, size_t *name_len);
 
 /* Read a key/value pair.
  * 'key' and 'value' must be valid pointers. The pointers passed as arguments
@@ -54,12 +67,12 @@ int ini_next_section(struct INI *ini, const char **name, size_t *name_len);
  *  0 if no more key/value pairs can be found,
  *  1 otherwise.
  */
-int ini_read_pair(struct INI *ini,
+__api int ini_read_pair(struct INI *ini,
 			const char **key, size_t *key_len,
 			const char **value, size_t *value_len);
 
 /* Set the read head to a specified offset. */
-void ini_set_read_pointer(struct INI *ini, const char *pointer);
+__api void ini_set_read_pointer(struct INI *ini, const char *pointer);
 
 /* Get the number of the line that contains the specified address.
  *
@@ -67,10 +80,12 @@ void ini_set_read_pointer(struct INI *ini, const char *pointer);
  * -EINVAL if the pointer points outside the INI string,
  *  The line number otherwise.
  */
-int ini_get_line_number(struct INI *ini, const char *pointer);
+__api int ini_get_line_number(struct INI *ini, const char *pointer);
 
 #ifdef __cplusplus
 }
 #endif
+
+#undef __api
 
 #endif /* __INI_H */
