@@ -17,6 +17,10 @@
 #ifndef __INI_H
 #define __INI_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 
 struct INI;
@@ -64,5 +68,9 @@ void ini_set_read_pointer(struct INI *ini, const char *pointer);
  *  The line number otherwise.
  */
 int ini_get_line_number(struct INI *ini, const char *pointer);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __INI_H */
