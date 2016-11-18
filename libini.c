@@ -31,7 +31,7 @@ static struct INI *_ini_open_mem(const char *buf,
 {
 	struct INI *ini = malloc(sizeof(*ini));
 	if (!ini) {
-		perror("Unable to allocate memory");
+		errno = ENOMEM;
 		return NULL;
 	}
 
@@ -52,24 +52,26 @@ struct INI *ini_open(const char *file)
 	char *buf, *ptr;
 	size_t len, left;
 	struct INI *ini = NULL;
+	int ret = 0;
 
 	f = fopen(file, "r");
 	if (!f) {
-		perror("Unable to open file");
-		return NULL;
+		ret = -errno;
+		goto err_set_errno;
 	}
 
 	fseek(f, 0, SEEK_END);
 	len = ftell(f);
 
 	if (!len) {
-		fprintf(stderr, "ERROR: File is empty\n");
+		ret = -EINVAL;
+		fprintf(stderr, "INI file empty\n");
 		goto error_fclose;
 	}
 
 	buf = malloc(len);
 	if (!buf) {
-		perror("Unable to allocate memory");
+		ret = -ENOMEM;
 		goto error_fclose;
 	}
 
@@ -81,8 +83,8 @@ struct INI *ini_open(const char *file)
 			if (feof(f))
 				break;
 
+			ret = -ferror(f);
 			free(buf);
-			perror("Unable to read file");
 			goto error_fclose;
 		}
 
@@ -91,9 +93,13 @@ struct INI *ini_open(const char *file)
 	}
 
 	ini = _ini_open_mem(buf, len - left, true);
+	if (!ini)
+		ret = -errno;
 
 error_fclose:
 	fclose(f);
+err_set_errno:
+	errno = -ret;
 	return ini;
 }
 
