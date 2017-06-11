@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 			printf("End of file.\n");
 			break;
 		}
-		if (res == -1) {
+		if (res < 0) {
 			printf("ERROR: code %i\n", res);
 			goto error;
 		}
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 				printf("No more data.\n");
 				break;
 			}
-			if (res == -1) {
+			if (res < 0) {
 				printf("ERROR: code %i\n", res);
 				goto error;
 			}
