@@ -65,7 +65,6 @@ struct INI *ini_open(const char *file)
 
 	if (!len) {
 		ret = -EINVAL;
-		fprintf(stderr, "INI file empty\n");
 		goto error_fclose;
 	}
 
@@ -150,10 +149,8 @@ int ini_next_section(struct INI *ini, const char **name, size_t *name_len)
 		return 0; /* EOF: no more sections */
 
 	if (ini->curr == ini->buf) {
-		if (skip_comments(ini) || *ini->curr != '[') {
-			fprintf(stderr, "Malformed INI file (missing section header)\n");
+		if (skip_comments(ini) || *ini->curr != '[')
 			return -EIO;
-		}
 	} else while (*ini->curr != '[' && !skip_line(ini));
 
 	if (ini->curr == ini->end)
@@ -162,10 +159,8 @@ int ini_next_section(struct INI *ini, const char **name, size_t *name_len)
 	_name = ++ini->curr;
 	do {
 		ini->curr++;
-		if (ini->curr == ini->end || *ini->curr == '\n') {
-			fprintf(stderr, "Malformed INI file (malformed section header)\n");
+		if (ini->curr == ini->end || *ini->curr == '\n')
 			return -EIO;
-		}
 	} while (*ini->curr != ']');
 
 
@@ -196,7 +191,6 @@ int ini_read_pair(struct INI *ini,
 		curr++;
 
 		if (curr == end || *curr == '\n') {
-			fprintf(stderr, "ERROR: Unexpected end of line\n");
 			return -EIO;
 
 		} else if (*curr == '=') {
@@ -212,18 +206,14 @@ int ini_read_pair(struct INI *ini,
 
 	/* Skip whitespaces. */
 	while (curr != end && (*curr == ' ' || *curr == '\t')) curr++;
-	if (curr == end) {
-		fprintf(stderr, "ERROR: Unexpected end of line\n");
+	if (curr == end)
 		return -EIO;
-	}
 
 	_value = curr;
 
 	while (curr != end && *curr != '\n') curr++;
-	if (curr == end) {
-		fprintf(stderr, "ERROR: Unexpected end of line\n");
+	if (curr == end)
 		return -EIO;
-	}
 
 	*value = _value;
 	*value_len = curr - _value - (*(curr - 1) == '\r');
