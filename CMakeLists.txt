@@ -20,9 +20,12 @@ if (CMAKE_COMPILER_IS_GNUCC AND NOT WIN32)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 endif()
 
-add_definitions(-DLIBINI_EXPORTS=1)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
+if (NOT BUILD_SHARED_LIBS)
+	add_definitions(-Dlibini_STATIC)
+endif (NOT BUILD_SHARED_LIBS)
 
-add_library(ini SHARED ${LIBINI_CFILES} ${LIBINI_HEADERS})
+add_library(ini ${LIBINI_CFILES} ${LIBINI_HEADERS})
 set_target_properties(ini PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
