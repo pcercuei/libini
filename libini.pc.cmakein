@@ -9,4 +9,4 @@ Version: @PROJECT_VERSION@
 
 Requires:
 Libs: -L${libdir} -lini
-Cflags: -I${includedir}
+Cflags: -I${includedir} @INI_STATIC_CFLAGS@
