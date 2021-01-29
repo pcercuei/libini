@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 #ifdef _WIN32
-#   ifdef libini_EXPORTS
+#   ifdef ini_EXPORTS
 #	define __api __declspec(dllexport)
 #   elif !defined(libini_STATIC)
 #	define __api __declspec(dllimport)
