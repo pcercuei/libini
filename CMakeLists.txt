@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.10)
 project(libini LANGUAGES C VERSION 0.1)
 
 include(GNUInstallDirs)
@@ -33,6 +33,15 @@ set_target_properties(ini PROPERTIES
 )
 
 target_compile_definitions(ini PUBLIC ${INI_STATIC_CFLAGS})
+
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/example/test.c")
+    add_executable(libini_test example/test.c)
+    target_link_libraries(libini_test PRIVATE ini)
+    target_include_directories(libini_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    set_target_properties(libini_test PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    )
+endif()
 
 install(TARGETS ini
 	ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
