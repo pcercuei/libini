@@ -165,21 +165,29 @@ int ini_next_section(struct INI *ini, const char **name, size_t *name_len)
 	if (ini->curr == ini->end)
 		return 0; /* EOF: no more sections */
 
+	/* skip comments at start of file or current position */
 	if (ini->curr == ini->buf) {
 		if (skip_comments(ini) || *ini->curr != '[')
 			return -EIO;
-	} else while (*ini->curr != '[' && !skip_line(ini));
+	} else while (ini->curr < ini->end && *ini->curr != '[' && !skip_line(ini));
 
 	if (ini->curr == ini->end)
 		return 0; /* EOF: no more sections */
 
+	/* move past the '[' */
 	_name = ++ini->curr;
-	do {
-		ini->curr++;
-		if (ini->curr == ini->end || *ini->curr == '\n')
+	/* scan until closing ']' or end-of-line/end-of-buffer */
+	while (ini->curr < ini->end && *ini->curr != ']') {
+		if (*ini->curr == '\n') {
+			/* newline inside section name is invalid */
 			return -EIO;
-	} while (*ini->curr != ']');
+		}
+		ini->curr++;
+	}
 
+	/* did we hit the end without finding ']'? */
+	if (ini->curr == ini->end)
+		return -EIO;
 
 	if (name && name_len) {
 		ptrdiff_t tmp_len = ini->curr - _name;
