@@ -17,6 +17,7 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -54,6 +55,7 @@ struct INI *ini_open(const char *file)
 	size_t len, left;
 	struct INI *ini = NULL;
 	int ret = 0;
+	long pos;
 
 	f = fopen(file, "r");
 	if (!f) {
@@ -62,14 +64,25 @@ struct INI *ini_open(const char *file)
 	}
 
 	fseek(f, 0, SEEK_END);
-	ret = ftell(f);
+	pos = ftell(f);
 
-	if (ret <= 0) {
+	if (pos < 0) {
+		/* ftell() error */
+		ret = -errno;
+		goto error_fclose;
+	}
+	if (pos == 0) {
+		/* empty INI file */
 		ret = -EINVAL;
 		goto error_fclose;
 	}
+	if ((unsigned long)pos > SIZE_MAX) {
+		/* file too large to fit in size_t */
+		ret = -EOVERFLOW;
+		goto error_fclose;
+	}
 
-	len = (size_t) ret;
+	len = (size_t) pos;
 	buf = malloc(len);
 	if (!buf) {
 		ret = -ENOMEM;
@@ -169,8 +182,12 @@ int ini_next_section(struct INI *ini, const char **name, size_t *name_len)
 
 
 	if (name && name_len) {
+		ptrdiff_t tmp_len = ini->curr - _name;
+		/* defensive, should never happen */
+		if (tmp_len < 0)
+			return -EIO;
 		*name = _name;
-		*name_len = ini->curr - _name;
+		*name_len = (size_t)tmp_len;
 	}
 
 	ini->curr++;
@@ -183,6 +200,7 @@ int ini_read_pair(struct INI *ini,
 {
 	size_t _key_len = 0;
 	const char *_key, *_value, *curr, *end = ini->end;
+	ptrdiff_t tmp_len;
 
 	if (skip_comments(ini))
 		return 0;
@@ -198,8 +216,13 @@ int ini_read_pair(struct INI *ini,
 			return -EIO;
 
 		} else if (*curr == '=') {
-			const char *tmp = curr;
-			_key_len = curr - _key;
+			const char *tmp;
+			tmp_len = curr - _key;
+
+			/* defensive, should never happen */
+			if (tmp_len < 0)
+				return -EIO;
+			_key_len = (size_t)tmp_len;
 			for (tmp = curr - 1; tmp > ini->curr &&
 					(*tmp == ' ' || *tmp == '\t'); tmp--)
 				_key_len--;
@@ -220,7 +243,11 @@ int ini_read_pair(struct INI *ini,
 		return -EIO;
 
 	*value = _value;
-	*value_len = curr - _value - (*(curr - 1) == '\r');
+	tmp_len = curr - _value - (*(curr - 1) == '\r');
+	/* defensive, should never happen */
+	if (tmp_len < 0)
+		return -EIO;
+	*value_len = (size_t)tmp_len;
 	*key = _key;
 	*key_len = _key_len;
 
