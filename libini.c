@@ -94,8 +94,10 @@ struct INI *ini_open(const char *file)
 	}
 
 	ini = _ini_open_mem(buf, len - left, true);
-	if (!ini)
+	if (!ini) {
 		ret = -errno;
+		free(buf);
+	}
 
 error_fclose:
 	fclose(f);
