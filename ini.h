@@ -74,7 +74,16 @@ __api int ini_read_pair(struct INI *ini,
 			const char **key, size_t *key_len,
 			const char **value, size_t *value_len);
 
-/* Set the read head to a specified offset. */
+/* Set the read head to a specified offset within the INI buffer.
+ *
+ * The pointer must point somewhere inside the buffer managed by this INI object.
+ * After calling this, ini_read_pair() or ini_next_section() will continue
+ * reading from the new position.
+ *
+ * WARNING: The library does not enforce any bounds or detect backward loops.
+ * It is the caller's responsibility to avoid moving the read pointer in a way
+ * that could cause infinite loops or repeated reads.
+ */
 __api void ini_set_read_pointer(struct INI *ini, const char *pointer);
 
 /* Get the number of the line that contains the specified address.
