@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "ini.h"
 
@@ -121,6 +122,8 @@ err_set_errno:
 
 void ini_close(struct INI *ini)
 {
+	if (!ini)
+		return;
 	if (ini->free_buf_on_exit)
 		free((char *) ini->buf);
 	free(ini);
@@ -162,12 +165,22 @@ static bool skip_line(struct INI *ini)
 int ini_next_section(struct INI *ini, const char **name, size_t *name_len)
 {
 	const char *_name;
+	if (!ini)
+		return -EIO;
+
 	if (ini->curr == ini->end)
 		return 0; /* EOF: no more sections */
 
 	/* skip comments at start of file or current position */
 	if (ini->curr == ini->buf) {
-		if (skip_comments(ini) || *ini->curr != '[')
+		if (skip_comments(ini))
+			return -EIO;
+
+		// skip leading whitespace before the '[' char
+		while (ini->curr < ini->end && (*ini->curr == ' ' || *ini->curr == '\t'))
+			ini->curr++;
+
+		if (ini->curr == ini->end || *ini->curr != '[')
 			return -EIO;
 	} else while (ini->curr < ini->end && *ini->curr != '[' && !skip_line(ini));
 
@@ -175,11 +188,17 @@ int ini_next_section(struct INI *ini, const char **name, size_t *name_len)
 		return 0; /* EOF: no more sections */
 
 	/* move past the '[' */
-	_name = ++ini->curr;
+	ini->curr++;
+
+	// skip leading whitespace after the '[' char
+	while (ini->curr < ini->end && (*ini->curr == ' ' || *ini->curr == '\t'))
+		ini->curr++;
+
+	_name = ini->curr;
 	/* scan until closing ']' or end-of-line/end-of-buffer */
 	while (ini->curr < ini->end && *ini->curr != ']') {
-		if (*ini->curr == '\n') {
-			/* newline inside section name is invalid */
+		if (*ini->curr == '\n' || *ini->curr == '[') {
+			/* newline or '[' inside section name is invalid */
 			return -EIO;
 		}
 		ini->curr++;
@@ -194,11 +213,30 @@ int ini_next_section(struct INI *ini, const char **name, size_t *name_len)
 		/* defensive, should never happen */
 		if (tmp_len < 0)
 			return -EIO;
+		/* trim trailing whitespace */
+		while (tmp_len > 0 && (_name[tmp_len-1] == ' ' || _name[tmp_len-1] == '\t'))
+			tmp_len--;
+		/* empty name is bad */
+		if (!tmp_len)
+			return -EIO;
 		*name = _name;
 		*name_len = (size_t)tmp_len;
 	}
 
+	/* skip over the ']' char */
 	ini->curr++;
+	/* look at the rest of the line */
+	while (ini->curr < ini->end && *ini->curr != '\n') {
+		/* let skip_comments() handle it */
+		if (*ini->curr == '#')
+			break;
+		/* eat white space */
+		if (*ini->curr == ' ' || *ini->curr == '\t' || *ini->curr == '\r')
+			ini->curr++;
+		else
+			return -EIO;
+	}
+
 	return 1;
 }
 
@@ -210,10 +248,19 @@ int ini_read_pair(struct INI *ini,
 	const char *_key, *_value, *curr, *end = ini->end;
 	ptrdiff_t tmp_len;
 
+	if (!ini)
+		return -EIO;
+
 	if (skip_comments(ini))
 		return 0;
+
+	/* skip whitespace at the start of the line */
+	while (ini->curr < ini->end && (*ini->curr == ' ' || *ini->curr == '\t'))
+		ini->curr++;
+
 	curr = _key = ini->curr;
 
+	/* section header, not a key/value pair */
 	if (*curr == '[')
 		return 0;
 
@@ -239,13 +286,14 @@ int ini_read_pair(struct INI *ini,
 		}
 	}
 
-	/* Skip whitespaces. */
+	/* Skip whitespaces after the '=' */
 	while (curr != end && (*curr == ' ' || *curr == '\t')) curr++;
 	if (curr == end)
 		return -EIO;
 
 	_value = curr;
 
+	/* find the end of the value */
 	while (curr != end && *curr != '\n') curr++;
 	if (curr == end)
 		return -EIO;
@@ -255,6 +303,11 @@ int ini_read_pair(struct INI *ini,
 	/* defensive, should never happen */
 	if (tmp_len < 0)
 		return -EIO;
+	/* trim trailing whitespace */
+	while (tmp_len > 0 &&
+			(_value[tmp_len - 1] == ' ' || _value[tmp_len - 1] == '\t'))
+		tmp_len--;
+
 	*value_len = (size_t)tmp_len;
 	*key = _key;
 	*key_len = _key_len;
@@ -265,6 +318,9 @@ int ini_read_pair(struct INI *ini,
 
 void ini_set_read_pointer(struct INI *ini, const char *pointer)
 {
+	if (!ini)
+		return;
+
 	if ((uintptr_t) pointer < (uintptr_t) ini->buf)
 		ini->curr = ini->buf;
 	else if ((uintptr_t) pointer > (uintptr_t) ini->end)
@@ -278,6 +334,8 @@ int ini_get_line_number(struct INI *ini, const char *pointer)
 	int line = 1;
 	const char *it;
 
+	if (!ini)
+		return -EIO;
 	if ((uintptr_t) pointer < (uintptr_t) ini->buf)
 		return -EINVAL;
 	if ((uintptr_t) pointer > (uintptr_t) ini->end)
