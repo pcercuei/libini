@@ -64,14 +64,18 @@ struct INI *ini_open(const char *file)
 		goto err_set_errno;
 	}
 
-	fseek(f, 0, SEEK_END);
-	pos = ftell(f);
-
-	if (pos < 0) {
-		/* ftell() error */
+	/* Determine file size */
+	if (fseek(f, 0, SEEK_END)) {
 		ret = -errno;
 		goto error_fclose;
 	}
+
+	pos = ftell(f);
+	if (pos < 0) {
+		ret = -errno;
+		goto error_fclose;
+	}
+
 	if (pos == 0) {
 		/* empty INI file */
 		ret = -EINVAL;
@@ -83,6 +87,12 @@ struct INI *ini_open(const char *file)
 		goto error_fclose;
 	}
 
+	/* rewind, without using rewind, as it can fail without returning errs */
+	if (fseek(f, 0, SEEK_SET)) {
+		ret = -errno;
+		goto error_fclose;
+	}
+
 	len = (size_t) pos;
 	buf = malloc(len);
 	if (!buf) {
@@ -90,17 +100,30 @@ struct INI *ini_open(const char *file)
 		goto error_fclose;
 	}
 
-	rewind(f);
-
 	for (left = len, ptr = buf; left; ) {
-		size_t tmp = fread(ptr, 1, left, f);
+		size_t tmp;
+		/* Defensive: do not read on an errored/EOF stream */
+		if (ferror(f)) {
+			ret = -EIO;
+			goto error_free;
+		}
+		if (feof(f))
+			break;
+
+		errno = 0;
+		tmp = fread(ptr, 1, left, f);
 		if (tmp == 0) {
 			if (feof(f))
 				break;
 
-			ret = -ferror(f);
-			free(buf);
-			goto error_fclose;
+			/* fread failed */
+			if(ferror(f)) {
+				ret = -EIO;
+				goto error_free;
+			}
+			/* Should not happen, but be defensive */
+			ret = -EIO;
+			goto error_free;
 		}
 
 		left -= tmp;
@@ -110,11 +133,19 @@ struct INI *ini_open(const char *file)
 	ini = _ini_open_mem(buf, len - left, true);
 	if (!ini) {
 		ret = -errno;
-		free(buf);
+		goto error_free;
 	}
 
+	/* Intentionally ignore fclose() return value.
+	 * Stream opened read-only; no meaningful recovery possible on close failure
+	 */
+	(void) fclose(f);
+	return ini;
+
+error_free:
+	free(buf);
 error_fclose:
-	fclose(f);
+	(void) fclose(f);
 err_set_errno:
 	errno = -ret;
 	return ini;
