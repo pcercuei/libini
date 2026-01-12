@@ -29,7 +29,7 @@ struct INI {
 	bool free_buf_on_exit;
 };
 
-static struct INI *_ini_open_mem(const char *buf,
+static struct INI * internal_ini_open_mem(const char *buf,
 			size_t len, bool free_buf_on_exit)
 {
 	struct INI *ini = malloc(sizeof(*ini));
@@ -46,7 +46,7 @@ static struct INI *_ini_open_mem(const char *buf,
 
 struct INI *ini_open_mem(const char *buf, size_t len)
 {
-	return _ini_open_mem(buf, len, false);
+	return internal_ini_open_mem(buf, len, false);
 }
 
 struct INI *ini_open(const char *file)
@@ -130,7 +130,7 @@ struct INI *ini_open(const char *file)
 		ptr += tmp;
 	}
 
-	ini = _ini_open_mem(buf, len - left, true);
+	ini = internal_ini_open_mem(buf, len - left, true);
 	if (!ini) {
 		ret = -errno;
 		goto error_free;
